@@ -3,7 +3,8 @@ import os
 from shutil import copyfile,move
 import yaml
 from getpass import getuser
-
+import importlib
+import ModManger
 
 def init():
   dict_file = {"path" : None}
@@ -211,14 +212,17 @@ def Menu():
 # def askQuestion(options,required):
   
 
+
 MainMenu = {
     1: {'name': "Create New Site", 'action': createNewSite},
     2: {'name': "Initialise the manager", 'action': init},
     # 3: {'name': "restart NGINX", 'action':restartNGINX}
     4: {'name': "Manage websites","action":manage},
     5: {'name': "Take a look" , 'action':takeAlook}
-}
-MainMenu[0] = {'name': "Exit", 'action': shutdown}
+    }
+MainMenu = {**ModManger.importMods() , **MainMenu}
+
+MainMenu[len(MainMenu)] = {'name': "Exit", 'action': shutdown}
 todolist = []
 while True:
   printLogo()
