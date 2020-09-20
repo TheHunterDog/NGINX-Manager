@@ -189,9 +189,9 @@ def createNewSite():
     return True
 
 
-def Menu():
-    global MainMenu
-    for name, data in MainMenu.items():
+def Menu(menu):
+    # global MainMenu
+    for name, data in menu.items():
         print("%s : %s " % (name, data["name"]))
     choice = input("What do you want to do? ")
     isnum = True
@@ -199,7 +199,7 @@ def Menu():
         try:
             choice = int(choice)
             isnum = isinstance(choice, int) == False
-            while int(choice) > len(MainMenu):
+            while int(choice) > len(menu):
                 print(choice)
                 choice = input("Enter a number within the limits")
         except ValueError:
@@ -217,12 +217,13 @@ MainMenu = {
     1: {'name': "Create New Site", 'action': createNewSite},
     2: {'name': "Initialise the manager", 'action': init},
     # 3: {'name': "restart NGINX", 'action':restartNGINX}
-    4: {'name': "Manage websites","action":manage},
-    5: {'name': "Take a look" , 'action':takeAlook}
+    3: {'name': "Manage websites","action":manage},
+    4: {'name': "Take a look" , 'action':takeAlook}
     }
-MainMenu = {**ModManger.importMods() , **MainMenu}
+MainMenu = {**ModManger.importMods(len(MainMenu) + 1) , **MainMenu}
 
-MainMenu[len(MainMenu)] = {'name': "Exit", 'action': shutdown}
+MainMenu[len(MainMenu) + 1] = {'name': "Exit", 'action': shutdown}
+SortedMenu = {k: v for k, v in sorted(MainMenu.items(), key=lambda item: item[0])}
 todolist = []
 while True:
   printLogo()
@@ -233,5 +234,5 @@ while True:
         print(todo)
   else:
     print("There are no todo's")
-  menuchoice = Menu()
+  menuchoice = Menu(SortedMenu)
   print(MainMenu[menuchoice]['action']())
