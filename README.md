@@ -11,7 +11,7 @@ The easy to use NGINX Manager for:
 First you need all the dependencies you install them using ```pip``` 
 The dependencies for now is only YAML for storing things like the NGINX config file
 You install YAML with 
-```pip install yaml```
+```pip install PyYAML```
 
 Now that you have all the dependencies installed you can run the NGINX manager
 you can run the NGINX manager with ```python main.py```
