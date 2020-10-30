@@ -45,7 +45,6 @@ def shutdown():
     print("Goodbye")
     sys.exit(0)
 
-
 def get_Config_location():
     try:
       with open('NM_Config.yaml') as file:
@@ -128,16 +127,16 @@ def manage():
     print("That doesnt exists yet")
   
 
-def createNewSite():
+def createNewSite(**kwargs):
     global todolist
     logFiles = []
     print("createNewSite")
     config_location = get_Config_location()
     sub_dirs = ['sites-available','sites-enabled']
-    filename = ""
-    url = ""
+    filename = kwargs.get("filename", "")
+    url = kwargs.get("url", "")
     logsPath = ""
-    root = ""
+    root = kwargs.get("root", "")
     while filename == "":
       filename = input("What do you want to call the file?")
     while url == "":
@@ -150,7 +149,7 @@ def createNewSite():
       logsPath = input("Where do you want to store the logs? (leave empty for default)")
       logsPath = "/Users/%s/Logs" % (getuser()) if logsPath == "" else logsPath
     # copyfile('template/newSiteTemplate','temp/%s' % filename)
-    
+    templateloc = kwargs.get("templateloc","template/newSiteTemplate")
     with open('template/newSiteTemplate','r') as inputfile:
       with open('temp/%s' % filename,'w') as output:
         for line in inputfile:
@@ -172,7 +171,7 @@ def createNewSite():
       choiceinit = input("we are now going to copy would you like to make any changes? ")
       if isinstance(choiceinit, str):
         if(choiceinit.find("y") >= 0):
-          print("the file is located at %s/temp" % (os.getcwd()))
+          print("the file is located at %s/temp answer with n if you are done" % (os.getcwd()))
         elif(choiceinit.find("n") >= 0):
           invalid = False
           print("Then I shall move the file")
@@ -199,7 +198,7 @@ def Menu(menu):
         try:
             choice = int(choice)
             isnum = isinstance(choice, int) == False
-            while int(choice) > len(menu):
+            while int(choice) > len(menu) or int(choice) <= 0:
                 print(choice)
                 choice = input("Enter a number within the limits")
         except ValueError:
@@ -212,27 +211,28 @@ def Menu(menu):
 # def askQuestion(options,required):
   
 
+def Main():
+  MainMenu = {
+      1: {'name': "Create New Site", 'action': createNewSite},
+      2: {'name': "Initialise the manager", 'action': init},
+      # 3: {'name': "restart NGINX", 'action':restartNGINX}
+      3: {'name': "Manage websites","action":manage},
+      4: {'name': "Take a look" , 'action':takeAlook}
+      }
+  MainMenu = {**ModManger.importMods(len(MainMenu) + 1) , **MainMenu}
 
-MainMenu = {
-    1: {'name': "Create New Site", 'action': createNewSite},
-    2: {'name': "Initialise the manager", 'action': init},
-    # 3: {'name': "restart NGINX", 'action':restartNGINX}
-    3: {'name': "Manage websites","action":manage},
-    4: {'name': "Take a look" , 'action':takeAlook}
-    }
-MainMenu = {**ModManger.importMods(len(MainMenu) + 1) , **MainMenu}
+  MainMenu[len(MainMenu) + 1] = {'name': "Exit", 'action': shutdown}
+  SortedMenu = {k: v for k, v in sorted(MainMenu.items(), key=lambda item: item[0])}
+  todolist = []
+  while True:
+    printLogo()
+    if(len(todolist) != 0):
+        print("todo's:")
 
-MainMenu[len(MainMenu) + 1] = {'name': "Exit", 'action': shutdown}
-SortedMenu = {k: v for k, v in sorted(MainMenu.items(), key=lambda item: item[0])}
-todolist = []
-while True:
-  printLogo()
-  if(len(todolist) != 0):
-      print("todo's:")
-
-      for todo in todolist:
-        print(todo)
-  else:
-    print("There are no todo's")
-  menuchoice = Menu(SortedMenu)
-  print(MainMenu[menuchoice]['action']())
+        for todo in todolist:
+          print(todo)
+    else:
+      print("There are no todo's")
+    menuchoice = Menu(SortedMenu)
+    print(MainMenu[menuchoice]['action']())
+Main()
