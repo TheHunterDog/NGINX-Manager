@@ -3,8 +3,6 @@ import os
 from shutil import copyfile,move
 import yaml
 from getpass import getuser
-import importlib
-import ModManger
 
 def init():
   dict_file = {"path" : None}
@@ -215,11 +213,10 @@ def Main():
   MainMenu = {
       1: {'name': "Create New Site", 'action': createNewSite},
       2: {'name': "Initialise the manager", 'action': init},
-      # 3: {'name': "restart NGINX", 'action':restartNGINX}
       3: {'name': "Manage websites","action":manage},
-      4: {'name': "Take a look" , 'action':takeAlook}
+      4: {'name': "Check for inconsistencies" , 'action':takeAlook}
       }
-  MainMenu = {**ModManger.importMods(len(MainMenu) + 1) , **MainMenu}
+  MainMenu = {**MainMenu}
 
   MainMenu[len(MainMenu) + 1] = {'name': "Exit", 'action': shutdown}
   SortedMenu = {k: v for k, v in sorted(MainMenu.items(), key=lambda item: item[0])}
