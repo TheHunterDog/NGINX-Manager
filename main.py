@@ -3,6 +3,10 @@ import os
 from shutil import copyfile,move
 import yaml
 from getpass import getuser
+import requests
+
+todolist = []
+
 
 def init():
   dict_file = {"path" : None}
@@ -81,6 +85,7 @@ def takeAlook():
   return True
 
 def printLogo():
+    print("ExceptBytes - Nginx Manager")
     return True
 
 
@@ -177,18 +182,22 @@ def createNewSite(**kwargs):
       print(path)
       copyfile('temp/%s'%(filename),'%s/%s/%s' %(config_location, path, filename) )
     os.remove('temp/%s' % filename)
-    for logFile in logFiles:
-      print(logFile)
-      # with open('%s/%s' % (logsPath,logFile),'w') as output:
-      with open('%s' % (logFile),'w') as output:
-        pass
-    todolist.append("You need to add 127.0.0.1 %s to your /etc/hosts file as root" % (url))
+    try:
+      for logFile in logFiles:
+        print(logFile)
+        with open('%s' % (logFile),'w') as output:
+          pass
+      todolist.append("You need to add 127.0.0.1 %s to your /etc/hosts file as root" % (url))
+    except FileNotFoundError:
+      print("Error while creating the log file's");
+      return False
     return True
 
 
-def Menu(menu):
+def Menu(menu,printOptions=True):
     # global MainMenu
-    for name, data in menu.items():
+    if(printOptions):
+      for name, data in menu.items():
         print("%s : %s " % (name, data["name"]))
     choice = input("What do you want to do? ")
     isnum = True
@@ -202,34 +211,110 @@ def Menu(menu):
         except ValueError:
             choice = input("Enter a number ")
             isnum = True
-    print("You chose %s" % (choice))
     del isnum
     return choice
-# def restartNGINX():
-# def askQuestion(options,required):
-  
+
+
+
+def verifyInstallation():
+  print("Verifying installation")
+  if(os.path.isfile("template/newSiteTemplate")):
+    print("Template: OK")
+  else:
+    print("Template: Failed")
+    if(len(os.listdir("template")) == 0):
+      print("No templates found")
+      print('y = yes')
+      print("n = no")
+      invalid = True
+      while(invalid):
+        choiceinit = input("Do you want to download a default template? ")
+        if isinstance(choiceinit, str):
+          if(choiceinit.find("y") >= 0):
+            invalid = False
+            print("Downloading from our website?")
+            r = requests.get("https://exceptbytes.com/NginxManager/Templates/default/newSiteTemplate")
+            open("template/newSiteTemplate",'wb').write(r.content);
+          elif(choiceinit.find("n") >= 0):
+            invalid = False
+    else:
+      print("Other templates found")
+
+def download():
+  r = requests.get("https://exceptbytes.com/NginxManager/Templates/default/newSiteTemplate")
+  open("template/newSiteTemplate",'wb').write(r.content);
+
+def settings():
+  mn={}
+  mnList= []
+  with open('NM_Config.yaml','r') as file:
+    document = yaml.full_load(file)
+    i = 0
+    for item,doc in document.items():
+      i+=1
+      mn[item] = doc
+      print("%s : %s = %s" % (i,item,doc))
+
+
+    mn[len(mn) + 1] = "exit"
+    print("%s : %s" % (len(mn),"exit"))
+
+
+    mnList = list(mn)
+
+
+    try:
+      choice = Menu(mn,False)
+      if(choice != len(mn)):
+        mn[mnList[choice-1]] = input("What should %s be?" % (mnList[choice-1]))
+        SaveSettings(mn)
+        file.close()
+      else:
+        file.close()
+        return True
+
+    except KeyboardInterrupt:
+      file.close()
+      shutdown()
+  return True
+
+def SaveSettings(dict):
+  with open('NM_Config.yaml','w') as file:
+    doc = yaml.dump(dict,file)
+
 
 def Main():
+  verifyInstallation()
   MainMenu = {
       1: {'name': "Create New Site", 'action': createNewSite},
       2: {'name': "Initialise the manager", 'action': init},
       3: {'name': "Manage websites","action":manage},
-      4: {'name': "Check for inconsistencies" , 'action':takeAlook}
+      4: {'name': "Check for inconsistencies" , 'action':takeAlook},
+      5: {'name': "Download default template" , 'action':download},
+      6: {'name': "Settings","action":settings}
       }
   MainMenu = {**MainMenu}
 
   MainMenu[len(MainMenu) + 1] = {'name': "Exit", 'action': shutdown}
   SortedMenu = {k: v for k, v in sorted(MainMenu.items(), key=lambda item: item[0])}
-  todolist = []
-  while True:
-    printLogo()
-    if(len(todolist) != 0):
-        print("todo's:")
-
-        for todo in todolist:
-          print(todo)
-    else:
-      print("There are no todo's")
-    menuchoice = Menu(SortedMenu)
-    print(MainMenu[menuchoice]['action']())
+  try:
+    while True:
+      printLogo()
+      if(len(todolist) != 0):
+          print("todo's:")
+          for todo in todolist:
+            print(todo)
+      else:
+        print("There are no todo's")
+      menuchoice = Menu(SortedMenu)
+      res = MainMenu[menuchoice]['action']()
+      if(isinstance(res,bool)):
+        if(res):
+          print("Succes")
+        else:
+          print("Something has gone wrong")
+      else:
+        print("%s" % (res))
+  except KeyboardInterrupt:
+    shutdown()
 Main()
