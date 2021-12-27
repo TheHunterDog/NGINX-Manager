@@ -223,46 +223,79 @@ def verifyInstallation():
             invalid = False
             print("Downloading from our website?")
             r = requests.get("https://exceptbytes.com/NginxManager/Templates/default/newSiteTemplate")
-            open("template/newSiteTemplate",'wb').write(r.content);
+            file = open("template/newSiteTemplate",'wb')
+            file.write(r.content)
+            file.close()
           elif(choiceInit.find("n") >= 0):
             invalid = False
     else:
       print("Other templates found")
+  if(os.path.isfile("NMConfig.yaml")):
+    print("Config: OK")
+  else:
+    print("Config does not exist")
+    print('y = yes')
+    print("n = no")
+    invalid = True
+    while(invalid):
+      choiceInit = input("Do you want to create one? ")
+      if isinstance(choiceInit, str):
+        if(choiceInit.find("y") >= 0):
+          invalid = False
+          file = open("NMConfig.yaml",'wb');
+          file.close()
+        elif(choiceInit.find("n") >= 0):
+          invalid = False
+
 
 def download():
   r = requests.get("https://exceptbytes.com/NginxManager/Templates/default/newSiteTemplate")
-  open("template/newSiteTemplate",'wb').write(r.content);
+  file = open("template/newSiteTemplate",'wb')
+  file.write(r.content);
+  file.close
 
 def settings():
   mn={}
-  mnList= []
-  with open('NMConfig.yaml','r') as file:
-    document = yaml.full_load(file)
-    i = 0
-    for item,doc in document.items():
-      i+=1
-      mn[item] = doc
-      print("%s : %s = %s" % (i,item,doc))
-    mn[len(mn) + 1] = "exit"
-    print("%s : %s" % (len(mn),"exit"))
-    mnList = list(mn)
-    try:
-      choice = Menu(mn,False)
-      if(choice != len(mn)):
-        mn[mnList[choice-1]] = input("What should %s be?" % (mnList[choice-1]))
-        SaveSettings(mn)
+  try:
+    with open('NMConfig.yaml','r') as file:
+      document = yaml.full_load(file)
+      i = 0
+      if(document):
+        for item,doc in document.items():
+          i+=1
+          mn[item] = doc
+          print("%s : %s = %s" % (i,item,doc))
+      mn[len(mn) + 1] = "exit"
+      print("%s : %s" % (len(mn),"exit"))
+      mn = {**mn}
+      try:
+        choice = Menu(mn,False)
+        if(choice != len(mn)):
+          mn[mn[choice-1]] = input("What should %s be?" % (mn[choice-1]))
+          SaveSettings(mn)
+          file.close()
+        else:
+          file.close()
+          return True
+      except KeyboardInterrupt:
         file.close()
-      else:
-        file.close()
-        return True
-    except KeyboardInterrupt:
-      file.close()
-      shutdown()
+        shutdown()
+  except FileNotFoundError:
+    print("File doesn't exist")
+  except PermissionError:
+    print("No permission to read in NMConfig.yaml")
   return True
 
 def SaveSettings(dict):
-  with open('NMConfig.yaml','w') as file:
-    doc = yaml.dump(dict,file)
+  try:
+    with open('NMConfig.yaml','w') as file:
+      yaml.dump(dict,file)
+    file.close()
+  except PermissionError:
+    print("No permission to write in NMConfig.yaml")
+  except FileNotFoundError:
+    print("File doesn't exist")
+    
 
 
 def Main():
