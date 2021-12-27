@@ -7,36 +7,36 @@ import requests
 
 todolist = []
 
-
 def init():
-  dict_file = {"path" : None}
+  dictFile = {"path" : None}
   print("Do you know where NGINX is installed?")
   print('y = yes')
   print("n = no")
   invalid = True
   while(invalid):
-    choiceinit = input("Shall we do it now? ")
-    if isinstance(choiceinit, str):
-      if(choiceinit.find("y") >= 0):
+    choiceInit = input("Shall we do it now? ")
+    if isinstance(choiceInit, str):
+      if(choiceInit.find("y") >= 0):
         invalid = False
         path = input("Tell us where: ")
-      elif(choiceinit.find("n") >= 0):
+      elif(choiceInit.find("n") >= 0):
         invalid = False
         print("The minions are looking for NGINX")
         path = autodetect()
+  if(isinstance(path,bool)):
+    print("we were unsuccessful to locate NGINX")
   print(path)
-  dict_file['path'] = path
+  dictFile['path'] = path
   try:
-    with open('NM_Config.yaml','w') as file:
-      doc = yaml.dump(dict_file,file)
+    with open('NMConfig.yaml','w') as file:
+      yaml.dump(dictFile,file)
   except Exception as e:
     print("An error has occurd %s" % e)
   return path
 
 def autodetect():
-  path = None
-  usualplaces = [ "/usr/local/nginx/conf", "/etc/nginx", "/usr/local/etc/nginx"]
-  for place in usualplaces:
+  usualPlaces = [ "/usr/local/nginx/conf", "/etc/nginx", "/usr/local/etc/nginx"]
+  for place in usualPlaces:
     print("Checking %s" % (place))
     print("it is%s here" % ("" if os.path.exists(place) else " not" ))
     if(os.path.exists(place)):
@@ -49,7 +49,7 @@ def shutdown():
 
 def get_Config_location():
     try:
-      with open('NM_Config.yaml') as file:
+      with open('NMConfig.yaml') as file:
         document = yaml.load(file,Loader=yaml.FullLoader)
         path = document['path']
     except FileNotFoundError:
@@ -58,12 +58,12 @@ def get_Config_location():
         print("n = no")
         invalid = True
         while(invalid):
-            choiceinit = input("Shall we do it now? ")
-            if isinstance(choiceinit, str):
-                if(choiceinit.find("y") >= 0):
+            choiceInit = input("Shall we do it now? ")
+            if isinstance(choiceInit, str):
+                if(choiceInit.find("y") >= 0):
                     invalid = False
                     path = init()
-                elif(choiceinit.find("n") >= 0):
+                elif(choiceInit.find("n") >= 0):
                     invalid = False
                     print("I cannot procceed")
                     shutdown()
@@ -88,11 +88,6 @@ def printLogo():
     print("ExceptBytes - Nginx Manager")
     return True
 
-
-def printLogo():
-    return True
-
-
 def getDisabledSites():
     enabled = getEnabledSites()
     Available = getAvailableSites()
@@ -100,19 +95,19 @@ def getDisabledSites():
     return diff
 
 def getAvailableSites():
-  configLOC = get_Config_location()
-  return os.listdir("%s/sites-available" % configLOC)
+  configLocation = get_Config_location()
+  return os.listdir("%s/sites-available" % configLocation)
 
 def getEnabledSites():
-  configLOC = get_Config_location()
-  return os.listdir("%s/sites-enabled" % configLOC)
+  configLocation = get_Config_location()
+  return os.listdir("%s/sites-enabled" % configLocation)
 
 def manage():
   # AvailableSites = getAvailableSites()
   # print(AvailableSites)
   print("Current enabled sites \n")
-  EnabledSites = getEnabledSites()
-  print(EnabledSites)
+  enabledSites = getEnabledSites()
+  print(enabledSites)
   print("Current disabled sites\n")
   disabled = getDisabledSites()
   print(disabled)
@@ -131,57 +126,51 @@ def manage():
   
 
 def createNewSite(**kwargs):
-    global todolist
     logFiles = []
     print("createNewSite")
-    config_location = get_Config_location()
-    sub_dirs = ['sites-available','sites-enabled']
-    filename = kwargs.get("filename", "")
+    configLocation = get_Config_location()
+    subDirs = ['sites-available','sites-enabled']
+    fileName = kwargs.get("fileName", "")
     url = kwargs.get("url", "")
     logsPath = ""
     root = kwargs.get("root", "")
-    while filename == "":
-      filename = input("What do you want to call the file?")
+    while fileName == "":
+      fileName = input("What do you want to call the file?")
     while url == "":
       url = input("What will be the url?")
     while root == "":
       root = input("What is the root Path?")
-    portnumber = input("What portnumber? (leave empty for default)")
-    portnumber = 80 if portnumber == "" else portnumber
+    portNumber = input("What portNumber? (leave empty for default)")
+    portNumber = 80 if portNumber == "" else portNumber
     while logsPath == "":
       logsPath = input("Where do you want to store the logs? (leave empty for default)")
       logsPath = "/Users/%s/Logs" % (getuser()) if logsPath == "" else logsPath
-    # copyfile('template/newSiteTemplate','temp/%s' % filename)
-    templateloc = kwargs.get("templateloc","template/newSiteTemplate")
     with open('template/newSiteTemplate','r') as inputfile:
-      with open('temp/%s' % filename,'w') as output:
+      with open('temp/%s' % fileName,'w') as output:
         for line in inputfile:
-            # linesplit = line.partition("-")
-            # logFiles.append("%s%s%s"% (linesplit[0],linesplit[1],linesplit[2].replace(";\n","")))
-          line = line.replace('PORT',str(portnumber))
+          line = line.replace('PORT',str(portNumber))
           line = line.replace('URL',str(url))
           line = line.replace('LOGS',str(logsPath))
           line = line.replace('ROOT',str(root))
           if("_log" in line):
             logFiles.append(line.partition("_log")[2].replace(";\n","").replace(" ",""))
-
           output.write(line)
     print(logFiles)
     print('y = yes')
     print("n = no")
     invalid = True
     while(invalid):
-      choiceinit = input("we are now going to copy would you like to make any changes? ")
-      if isinstance(choiceinit, str):
-        if(choiceinit.find("y") >= 0):
+      choiceInit = input("we are now going to copy would you like to make any changes? ")
+      if isinstance(choiceInit, str):
+        if(choiceInit.find("y") >= 0):
           print("the file is located at %s/temp answer with n if you are done" % (os.getcwd()))
-        elif(choiceinit.find("n") >= 0):
+        elif(choiceInit.find("n") >= 0):
           invalid = False
           print("Then I shall move the file")
-    for path in sub_dirs:
+    for path in subDirs:
       print(path)
-      copyfile('temp/%s'%(filename),'%s/%s/%s' %(config_location, path, filename) )
-    os.remove('temp/%s' % filename)
+      copyfile('temp/%s'%(fileName),'%s/%s/%s' %(configLocation, path, fileName) )
+    os.remove('temp/%s' % fileName)
     try:
       for logFile in logFiles:
         print(logFile)
@@ -195,23 +184,23 @@ def createNewSite(**kwargs):
 
 
 def Menu(menu,printOptions=True):
-    # global MainMenu
+    # global mainMenu
     if(printOptions):
       for name, data in menu.items():
         print("%s : %s " % (name, data["name"]))
     choice = input("What do you want to do? ")
-    isnum = True
-    while(isnum):
+    isNum = True
+    while(isNum):
         try:
             choice = int(choice)
-            isnum = isinstance(choice, int) == False
+            isNum = isinstance(choice, int) == False
             while int(choice) > len(menu) or int(choice) <= 0:
                 print(choice)
                 choice = input("Enter a number within the limits")
         except ValueError:
             choice = input("Enter a number ")
-            isnum = True
-    del isnum
+            isNum = True
+    del isNum
     return choice
 
 
@@ -228,14 +217,14 @@ def verifyInstallation():
       print("n = no")
       invalid = True
       while(invalid):
-        choiceinit = input("Do you want to download a default template? ")
-        if isinstance(choiceinit, str):
-          if(choiceinit.find("y") >= 0):
+        choiceInit = input("Do you want to download a default template? ")
+        if isinstance(choiceInit, str):
+          if(choiceInit.find("y") >= 0):
             invalid = False
             print("Downloading from our website?")
             r = requests.get("https://exceptbytes.com/NginxManager/Templates/default/newSiteTemplate")
             open("template/newSiteTemplate",'wb').write(r.content);
-          elif(choiceinit.find("n") >= 0):
+          elif(choiceInit.find("n") >= 0):
             invalid = False
     else:
       print("Other templates found")
@@ -247,22 +236,16 @@ def download():
 def settings():
   mn={}
   mnList= []
-  with open('NM_Config.yaml','r') as file:
+  with open('NMConfig.yaml','r') as file:
     document = yaml.full_load(file)
     i = 0
     for item,doc in document.items():
       i+=1
       mn[item] = doc
       print("%s : %s = %s" % (i,item,doc))
-
-
     mn[len(mn) + 1] = "exit"
     print("%s : %s" % (len(mn),"exit"))
-
-
     mnList = list(mn)
-
-
     try:
       choice = Menu(mn,False)
       if(choice != len(mn)):
@@ -272,20 +255,19 @@ def settings():
       else:
         file.close()
         return True
-
     except KeyboardInterrupt:
       file.close()
       shutdown()
   return True
 
 def SaveSettings(dict):
-  with open('NM_Config.yaml','w') as file:
+  with open('NMConfig.yaml','w') as file:
     doc = yaml.dump(dict,file)
 
 
 def Main():
   verifyInstallation()
-  MainMenu = {
+  mainMenu = {
       1: {'name': "Create New Site", 'action': createNewSite},
       2: {'name': "Initialise the manager", 'action': init},
       3: {'name': "Manage websites","action":manage},
@@ -293,10 +275,10 @@ def Main():
       5: {'name': "Download default template" , 'action':download},
       6: {'name': "Settings","action":settings}
       }
-  MainMenu = {**MainMenu}
+  mainMenu = {**mainMenu}
 
-  MainMenu[len(MainMenu) + 1] = {'name': "Exit", 'action': shutdown}
-  SortedMenu = {k: v for k, v in sorted(MainMenu.items(), key=lambda item: item[0])}
+  mainMenu[len(mainMenu) + 1] = {'name': "Exit", 'action': shutdown}
+  sortedMenu = {k: v for k, v in sorted(mainMenu.items(), key=lambda item: item[0])}
   try:
     while True:
       printLogo()
@@ -306,8 +288,8 @@ def Main():
             print(todo)
       else:
         print("There are no todo's")
-      menuchoice = Menu(SortedMenu)
-      res = MainMenu[menuchoice]['action']()
+      menuChoice = Menu(sortedMenu)
+      res = mainMenu[menuChoice]['action']()
       if(isinstance(res,bool)):
         if(res):
           print("Succes")
